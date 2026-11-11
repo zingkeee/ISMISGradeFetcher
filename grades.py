@@ -71,12 +71,37 @@ SEMESTER_JS = """
 
 
 def read_all_tables(page):
-    """Read every grades table on the page, one entry per semester."""
-    page.locator(GRADES_TABLE_SELECTOR).first.wait_for(timeout=15000)
-    terms = []
+    """
+    Read the grades page.
+    Returns {"overall": {...} or None, "terms": [{term, courses, summary}, ...]}.
+    Only tables with MG and FG columns count as semester grades; the GWA box
+    is captured separately and everything else (footers, curriculum lists) is skipped.
+    """
+    page.locator(GRADES_TABLE_SELECTOR).first.wait_for(timeout=15000) 
+    terms, overall = [], None
+    page.wait_for_timeout(3000)
+
     for table in page.locator(GRADES_TABLE_SELECTOR).all():
-        term = table.evaluate(SEMESTER_JS)
         headers = [h.strip() for h in table.locator("th").all_inner_texts()]
+        upper = [h.upper() for h in headers]
+        all_text = " ".join(table.all_inner_texts()).lower()
+
+        # Overall GWA box, e.g. "General Weighted Average: 1.75 | Total Units Earned: 117.00"
+        if "general weighted average" in all_text:
+            cells = [c.strip() for c in table.locator("td").all_inner_texts() if c.strip()]
+            overall = {"raw": cells}
+            for i, c in enumerate(cells):
+                if "weighted average" in c.lower() and i + 1 < len(cells):
+                    overall["gwa"] = cells[i + 1]
+                if "total units earned" in c.lower():
+                    overall["total_units_earned"] = c.split(":")[-1].strip()
+            continue
+
+        # Skip anything that is not a semester grades table.
+        if "MG" not in upper or "FG" not in upper:
+            continue
+
+        term = table.evaluate(SEMESTER_JS)
         courses, summary = [], None
         for tr in table.locator("tr").all():
             cells = [c.strip() for c in tr.locator("td").all_inner_texts()]
@@ -84,17 +109,17 @@ def read_all_tables(page):
                 continue
             row = (
                 dict(zip(headers, cells))
-                if headers and len(headers) == len(cells)
+                if len(headers) == len(cells)
                 else {f"col{i + 1}": c for i, c in enumerate(cells)}
             )
-            # The "Total Units Passed ... GPA" row is a summary, not a course.
             if not cells[0] and "total units" in " ".join(cells).lower():
                 summary = row
             else:
                 courses.append(row)
         if courses:
             terms.append({"term": term, "courses": courses, "summary": summary})
-    return terms
+
+    return {"overall": overall, "terms": terms}
 
 
 def main():
@@ -102,7 +127,7 @@ def main():
     dump = "--dump" in sys.argv
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not show)
+        browser = p.chromium.launch(headless=not show, channel="chromium")
         context = browser.new_context(
             storage_state=str(STATE_FILE) if STATE_FILE.exists() else None
         )
@@ -133,8 +158,10 @@ def main():
         browser.close()
 
     OUTPUT_FILE.write_text(json.dumps(grades, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Saved {len(grades)} semester(s) to {OUTPUT_FILE}")
-    for t in grades:
+    print(f"Saved {len(grades['terms'])} semester(s) to {OUTPUT_FILE}")
+    if grades["overall"]:
+        print("Overall:", grades["overall"])
+    for t in grades["terms"]:
         print(f"\n{t['term']}")
         for c in t["courses"]:
             print("  ", c)
