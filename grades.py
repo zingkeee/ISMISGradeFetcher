@@ -47,22 +47,54 @@ def log_in(page):
     page.wait_for_load_state("networkidle")
 
 
-def read_table(page):
-    """Turn the first matching table into a list of dicts keyed by header text."""
-    table = page.locator(GRADES_TABLE_SELECTOR).first
-    table.wait_for(timeout=15000)
+# Finds the nearest "... SEMESTER - 2024" style heading above a table.
+SEMESTER_JS = """
+(table) => {
+  const re = /(semester|summer|midyear|trimester)/i;
+  let node = table;
+  while (node && node !== document.body) {
+    let sib = node.previousElementSibling;
+    while (sib) {
+      if (!sib.querySelector('table') && sib.tagName !== 'TABLE') {
+        const lines = (sib.innerText || '').split('\\n')
+          .map(s => s.trim()).filter(Boolean).reverse();
+        const hit = lines.find(l => re.test(l) && l.length < 80);
+        if (hit) return hit;
+      }
+      sib = sib.previousElementSibling;
+    }
+    node = node.parentElement;
+  }
+  return 'Unknown term';
+}
+"""
 
-    headers = [h.strip() for h in table.locator("th").all_inner_texts()]
-    rows = []
-    for tr in table.locator("tr").all():
-        cells = [c.strip() for c in tr.locator("td").all_inner_texts()]
-        if not cells:
-            continue
-        if headers and len(headers) == len(cells):
-            rows.append(dict(zip(headers, cells)))
-        else:
-            rows.append({f"col{i + 1}": c for i, c in enumerate(cells)})
-    return rows
+
+def read_all_tables(page):
+    """Read every grades table on the page, one entry per semester."""
+    page.locator(GRADES_TABLE_SELECTOR).first.wait_for(timeout=15000)
+    terms = []
+    for table in page.locator(GRADES_TABLE_SELECTOR).all():
+        term = table.evaluate(SEMESTER_JS)
+        headers = [h.strip() for h in table.locator("th").all_inner_texts()]
+        courses, summary = [], None
+        for tr in table.locator("tr").all():
+            cells = [c.strip() for c in tr.locator("td").all_inner_texts()]
+            if not cells:
+                continue
+            row = (
+                dict(zip(headers, cells))
+                if headers and len(headers) == len(cells)
+                else {f"col{i + 1}": c for i, c in enumerate(cells)}
+            )
+            # The "Total Units Passed ... GPA" row is a summary, not a course.
+            if not cells[0] and "total units" in " ".join(cells).lower():
+                summary = row
+            else:
+                courses.append(row)
+        if courses:
+            terms.append({"term": term, "courses": courses, "summary": summary})
+    return terms
 
 
 def main():
@@ -97,13 +129,17 @@ def main():
             page.screenshot(path=str(DEBUG_DIR / "page.png"), full_page=True)
             print("Saved debug/page.html and debug/page.png")
 
-        grades = read_table(page)
+        grades = read_all_tables(page)
         browser.close()
 
     OUTPUT_FILE.write_text(json.dumps(grades, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Saved {len(grades)} rows to {OUTPUT_FILE}")
-    for row in grades:
-        print(row)
+    print(f"Saved {len(grades)} semester(s) to {OUTPUT_FILE}")
+    for t in grades:
+        print(f"\n{t['term']}")
+        for c in t["courses"]:
+            print("  ", c)
+        if t["summary"]:
+            print("  >>", t["summary"])
 
 
 if __name__ == "__main__":
