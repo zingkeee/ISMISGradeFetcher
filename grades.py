@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
+from playwright.sync_api import TimeoutError as PWTimeout
 from playwright.sync_api import sync_playwright
 
 load_dotenv()
@@ -35,7 +36,9 @@ DEBUG_DIR = Path("debug")
 
 
 def needs_login(page) -> bool:
-    """True if the password box is visible, meaning we are on the login page."""
+    """True if we were sent to the login page (expired session) or a password box is showing."""
+    if "/account/login" in page.url.lower():
+        return True
     return page.locator(PASSWORD_SELECTOR).first.is_visible()
 
 
@@ -77,9 +80,8 @@ def read_all_tables(page):
     Only tables with MG and FG columns count as semester grades; the GWA box
     is captured separately and everything else (footers, curriculum lists) is skipped.
     """
-    page.locator(GRADES_TABLE_SELECTOR).first.wait_for(timeout=15000) 
+    page.locator(GRADES_TABLE_SELECTOR).first.wait_for(timeout=15000)
     terms, overall = [], None
-    page.wait_for_timeout(3000)
 
     for table in page.locator(GRADES_TABLE_SELECTOR).all():
         headers = [h.strip() for h in table.locator("th").all_inner_texts()]
@@ -127,7 +129,7 @@ def main():
     dump = "--dump" in sys.argv
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=not show, channel="chromium")
+        browser = p.chromium.launch(headless=not show)
         context = browser.new_context(
             storage_state=str(STATE_FILE) if STATE_FILE.exists() else None
         )
@@ -154,7 +156,17 @@ def main():
             page.screenshot(path=str(DEBUG_DIR / "page.png"), full_page=True)
             print("Saved debug/page.html and debug/page.png")
 
-        grades = read_all_tables(page)
+        try:
+            grades = read_all_tables(page)
+        except PWTimeout:
+            DEBUG_DIR.mkdir(exist_ok=True)
+            page.screenshot(path=str(DEBUG_DIR / "timeout.png"), full_page=True)
+            STATE_FILE.unlink(missing_ok=True)  # force a fresh login next time
+            browser.close()
+            sys.exit(
+                "Couldn't find the grades table. Saved debug/timeout.png and cleared "
+                "the saved session. Run the script again."
+            )
         browser.close()
 
     OUTPUT_FILE.write_text(json.dumps(grades, indent=2, ensure_ascii=False), encoding="utf-8")

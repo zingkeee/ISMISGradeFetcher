@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My grades</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #eef1ee; --panel: #ffffff; --ink: #17201a; --mute: #55625a; --rule: #cfd7d0;
+  --accent: #14402a;
+  --b1: #1b7a46; --b2: #4a7f2c; --b3: #8a6a00; --b4: #b4432f;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101612; --panel: #171f19; --ink: #e8eee9; --mute: #9aa89e; --rule: #2b372e;
+    --accent: #7fc79b;
+    --b1: #3fae70; --b2: #86b95f; --b3: #d9b44a; --b4: #e0705a;
+  }
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0; color: var(--ink); background: var(--bg);
+  font: 16px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+main { max-width: 980px; margin: 0 auto; padding: 40px 20px 24px; }
+.serif { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
+h1 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 600; }
+.sub { margin: 0; color: var(--mute); font-size: .9rem; }
+
+.hero {
+  display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 32px;
+  align-items: center; padding: 28px 0 36px; border-bottom: 2px solid var(--ink);
+}
+.gwa-label { color: var(--mute); font-size: .95rem; }
+.gwa { font-size: 5.5rem; line-height: 1; margin: 4px 0 6px; letter-spacing: -.02em; }
+.gwa-note { color: var(--mute); font-size: .9rem; margin: 0; }
+.chart { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.chart text { fill: var(--mute); font-size: 11px; }
+.chart .val { fill: var(--ink); font-size: 13px; font-weight: 600; }
+.chart .pt { stroke: var(--panel); stroke-width: 2; }
+.better { fill: var(--mute); font-size: 11px; }
+
+.term { padding-top: 32px; }
+.term-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.term h2 { margin: 0; font-size: 1.4rem; font-weight: 600; }
+.term-gpa { font-size: 1.9rem; }
+.term-gpa small { font-family: "Segoe UI", system-ui, sans-serif; font-size: .8rem; color: var(--mute); margin-right: 8px; }
+.units { margin: 2px 0 10px; color: var(--mute); font-size: .9rem; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 520px; }
+th, td { padding: 9px 10px; text-align: left; border-top: 1px solid var(--rule); vertical-align: baseline; }
+th { font-size: .85rem; font-weight: 600; color: var(--mute); border-top: 0; border-bottom: 1px solid var(--ink); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+td.code { color: var(--mute); white-space: nowrap; }
+td.fg { font-weight: 700; font-size: 1.05rem; }
+.muted { color: var(--mute); font-weight: 400; }
+.b1 { color: var(--b1); } .b2 { color: var(--b2); } .b3 { color: var(--b3); } .b4 { color: var(--b4); }
+
+.picker {
+  margin-top: 32px; padding: 28px; border: 2px dashed var(--rule); border-radius: 8px; background: var(--panel);
+}
+.picker p { margin: 0 0 12px; max-width: 60ch; }
+.picker code { background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+.btn {
+  display: inline-block; padding: 8px 16px; border-radius: 6px; cursor: pointer;
+  background: var(--accent); color: var(--bg); font-weight: 600; font-size: .95rem;
+}
+.btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.btn:focus-within { outline: 3px solid var(--ink); outline-offset: 2px; }
+.error { color: var(--b4); margin-top: 10px; }
+footer { max-width: 980px; margin: 0 auto; padding: 8px 20px 48px; color: var(--mute); font-size: .85rem; }
+footer .btn { background: transparent; color: var(--ink); border: 1px solid var(--rule); font-weight: 500; padding: 4px 10px; font-size: .85rem; margin-left: 6px; }
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; gap: 20px; }
+  .gwa { font-size: 4.5rem; }
+}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<footer>
+  Your grades are read in this browser tab only and are never uploaded.
+  <label class="btn">Load a different file<input type="file" id="again" accept=".json,application/json"></label>
+</footer>
+
+<script>
+const $ = (s) => document.querySelector(s);
+function h(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+const NS = "http://www.w3.org/2000/svg";
+function s(tag, attrs, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : null; };
+// On this scale a lower number is a better grade.
+const band = (n) => n == null ? "" : n <= 1.5 ? "b1" : n <= 2 ? "b2" : n <= 3 ? "b3" : "b4";
+const small = new Set(["and", "of", "to", "in", "for", "the", "on", "a", "at"]);
+const titleCase = (str) => str.toLowerCase().replace(/[a-z0-9]+/g, (w, i) =>
+  /^(i|ii|iii|iv|v|vi|it|ai|ict|hci)$/.test(w) ? w.toUpperCase()
+  : (i > 0 && small.has(w)) ? w : w[0].toUpperCase() + w.slice(1));
+const prettyTerm = (t) => { t = t.toLowerCase().replace(/\s*-\s*/, ", "); return t[0].toUpperCase() + t.slice(1); };
+function shortTerm(t) {
+  const m = t.toLowerCase();
+  const sem = m.includes("first") ? "1st sem" : m.includes("second") ? "2nd sem" : m.includes("summer") ? "Summer" : "Term";
+  return sem + " " + ((t.match(/\d{4}/) || [""])[0]);
+}
+function shown(v, isFinal) {
+  v = (v || "").trim();
+  if (!v || v === "NG") return "\u2014";
+  if (/evaluate/i.test(v)) return "Pending";
+  return v;
+}
+
+function trendChart(points) {
+  const W = 520, H = 230, L = 36, R = 44, T = 28, B = 40;
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img",
+    "aria-label": "Semester GPA over time" });
+  const gpas = points.map((p) => p.gpa);
+  const yMin = 1.0, yMax = Math.max(2.5, Math.ceil((Math.max(...gpas) + 0.1) * 4) / 4);
+  const y = (g) => T + ((g - yMin) / (yMax - yMin)) * (H - T - B);
+  const x = (i) => points.length === 1 ? (L + W - R) / 2 : L + (i * (W - L - R)) / (points.length - 1);
+  for (let g = yMin; g <= yMax + 0.001; g += 0.5) {
+    svg.append(s("line", { x1: L, x2: W - R, y1: y(g), y2: y(g), class: "grid" }));
+    svg.append(s("text", { x: L - 6, y: y(g) + 4, "text-anchor": "end" }, g.toFixed(1)));
+  }
+  svg.append(s("text", { x: L, y: 12, class: "better" }, "Better"));
+  svg.append(s("polyline", { class: "line", points: points.map((p, i) => `${x(i)},${y(p.gpa)}`).join(" ") }));
+  points.forEach((p, i) => {
+    svg.append(s("circle", { cx: x(i), cy: y(p.gpa), r: 6, class: "pt", fill: `var(--${band(p.gpa)})` }));
+    svg.append(s("text", { x: x(i), y: y(p.gpa) - 12, "text-anchor": "middle", class: "val" }, p.gpa.toFixed(2)));
+    svg.append(s("text", { x: x(i), y: H - 14, "text-anchor": "middle" }, shortTerm(p.term)));
+  });
+  return svg;
+}
+
+function render(data) {
+  const terms = Array.isArray(data) ? data : (data.terms || []);
+  const overall = Array.isArray(data) ? null : data.overall;
+  const app = $("#app");
+  app.replaceChildren();
+
+  const head = h("div");
+  head.append(h("h1", null, "Grades"), h("p", "sub", "On this scale, a lower number is a better grade."));
+  app.append(head);
+
+  const hero = h("section", "hero");
+  const left = h("div");
+  left.append(h("div", "gwa-label", "General weighted average"));
+  const gwa = num(overall && overall.gwa);
+  left.append(h("div", "gwa serif " + band(gwa), gwa != null ? gwa.toFixed(2) : "\u2014"));
+  if (overall && overall.total_units_earned) left.append(h("p", "gwa-note", overall.total_units_earned + " units earned"));
+  hero.append(left);
+
+  const points = terms
+    .map((t) => ({ term: t.term, gpa: num(t.summary && t.summary.FG) }))
+    .filter((p) => p.gpa != null);
+  if (points.length) hero.append(trendChart(points));
+  app.append(hero);
+
+  // Newest semester first.
+  terms.slice().reverse().forEach((t) => {
+    const sec = h("section", "term");
+    const top = h("div", "term-head");
+    top.append(h("h2", "serif", prettyTerm(t.term)));
+    const g = num(t.summary && t.summary.FG);
+    const gp = h("div", "term-gpa serif " + band(g));
+    gp.append(h("small", null, "GPA"), document.createTextNode(g != null ? g.toFixed(2) : "Pending"));
+    top.append(gp);
+    sec.append(top);
+    if (t.summary && t.summary.Description) sec.append(h("p", "units", t.summary.Description));
+
+    const wrap = h("div", "scroll");
+    const table = h("table");
+    const thead = h("thead"), hr = h("tr");
+    [["Code", ""], ["Course", ""], ["Units", "n"], ["Midterm", "n"], ["Final", "n"]]
+      .forEach(([label, cls]) => { const th = h("th", cls, label); th.scope = "col"; hr.append(th); });
+    thead.append(hr); table.append(thead);
+    const tb = h("tbody");
+    t.courses.forEach((c) => {
+      const tr = h("tr");
+      const fg = num(c.FG);
+      tr.append(
+        h("td", "code", c["Course Code"] || c.col1 || ""),
+        h("td", null, titleCase(c.Description || c.col2 || "")),
+        h("td", "n", c.Units || c.col3 || ""),
+        h("td", "n muted", shown(c.MG)),
+        h("td", "n fg " + (fg != null ? band(fg) : "muted"), shown(c.FG))
+      );
+      tb.append(tr);
+    });
+    table.append(tb); wrap.append(table); sec.append(wrap); app.append(sec);
+  });
+}
+
+function loadFile(file) {
+  file.text().then((txt) => render(JSON.parse(txt))).catch(() => showPicker("That file isn\u2019t a valid grades.json. Choose the file that grades.py created."));
+}
+
+function showPicker(error) {
+  const app = $("#app");
+  app.replaceChildren();
+  const box = h("div", "picker");
+  box.append(h("p", null, "Choose the grades.json file that grades.py created, or drop it onto this page."));
+  box.append(h("p", "muted", "Browsers block pages from reading local files on their own. To skip this step, run python -m http.server in this folder and open localhost:8000."));
+  const label = h("label", "btn", "Choose grades.json");
+  const input = h("input"); input.type = "file"; input.accept = ".json,application/json";
+  input.addEventListener("change", () => input.files[0] && loadFile(input.files[0]));
+  label.append(input); box.append(label);
+  if (error) box.append(h("p", "error", error));
+  app.append(box);
+}
+
+$("#again").addEventListener("change", (e) => e.target.files[0] && loadFile(e.target.files[0]));
+addEventListener("dragover", (e) => e.preventDefault());
+addEventListener("drop", (e) => {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+fetch("grades.json", { cache: "no-store" })
+  .then((r) => { if (!r.ok) throw new Error("missing"); return r.json(); })
+  .then(render)
+  .catch(() => showPicker());
+</script>
+</body>
+</html>
