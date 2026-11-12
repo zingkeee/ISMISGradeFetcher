@@ -2,268 +2,186 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grades</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FDFBF7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Grade Book</title>
 <style>
-/* Design tokens: Minimalism & Swiss Style (ui-ux-pro-max), education teal + grade colors */
-:root {
-  color-scheme: light dark;
-  --bg: #F0FDFA; --card: #FFFFFF; --fg: #134E4A; --mute: #475569; --rule: #99D5CC; --muted-bg: #E8F1F4;
-  --primary: #0F766E; --chart: #0D9488;
-  --b1: #0F766E; --b2: #166534; --b3: #B45309; --b4: #B91C1C;
-  --sans: "Fira Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --mono: "Fira Code", Consolas, "SFMono-Regular", Menlo, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0B1F1E; --card: #112826; --fg: #E6FFFA; --mute: #9DBDB8; --rule: #25524E; --muted-bg: #163532;
-    --primary: #5EEAD4; --chart: #2DD4BF;
-    --b1: #5EEAD4; --b2: #86EFAC; --b3: #FCD34D; --b4: #FCA5A5;
-  }
-}
-* { box-sizing: border-box; }
-html { background: var(--bg); }
-body { margin: 0; color: var(--fg); background: var(--bg); font: 16px/1.5 var(--sans); }
-.layout {
-  max-width: 1120px; margin: 0 auto; padding: 40px 20px 24px;
-  display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 56px; align-items: start;
-}
-.side { position: sticky; top: 24px; }
-h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
-.sub { margin: 4px 0 28px; color: var(--mute); font-size: .9rem; }
-.label { color: var(--mute); font-size: .9rem; }
-.gwa { font: 500 4.5rem/1 var(--mono); letter-spacing: -.04em; margin: 6px 0 24px; }
-dl { margin: 0; border-top: 2px solid var(--fg); }
-.fact { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
-dt { color: var(--mute); font-size: .9rem; }
-dd { margin: 0; font: 500 .95rem var(--mono); text-align: right; }
-.trend { margin: 18px 0 0; color: var(--mute); font-size: .9rem; max-width: 46ch; }
-
-h2 { margin: 0; font-size: 1.2rem; font-weight: 600; }
-.chart-wrap { border-top: 2px solid var(--fg); padding-top: 14px; }
-.chart { width: 100%; height: auto; display: block; margin-top: 8px; }
-.chart .grid { stroke: var(--rule); stroke-width: 1; }
-.chart .line { fill: none; stroke: var(--chart); stroke-width: 2.5; }
-.chart text { fill: var(--mute); font: 11px var(--sans); }
-.chart .val { fill: var(--fg); font: 500 12px var(--mono); }
-.chart .pt { stroke: var(--bg); stroke-width: 2; }
-
-.term { margin-top: 44px; }
-.term-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap;
-  border-top: 2px solid var(--fg); padding-top: 14px; }
-.term-gpa { font: 500 1.6rem var(--mono); }
-.term-gpa small { font: 400 .8rem var(--sans); color: var(--mute); margin-right: 8px; }
-.units { margin: 2px 0 10px; color: var(--mute); font-size: .9rem; }
-.scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 520px; }
-th, td { padding: 10px 12px 10px 0; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
-th { font-size: .85rem; font-weight: 600; color: var(--mute); }
-td.n, th.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
-th.n { font-family: var(--sans); }
-td.code { color: var(--mute); font-family: var(--mono); font-size: .85rem; white-space: nowrap; }
-td.fg { font-weight: 600; }
-.muted { color: var(--mute); }
-.b1 { color: var(--b1); } .b2 { color: var(--b2); } .b3 { color: var(--b3); } .b4 { color: var(--b4); }
-
-.picker { padding: 28px; border: 2px dashed var(--rule); border-radius: 4px; background: var(--card); grid-column: 1 / -1; }
-.picker p { margin: 0 0 12px; max-width: 60ch; }
-.btn { display: inline-block; padding: 10px 16px; border-radius: 4px; cursor: pointer; min-height: 44px;
-  background: var(--primary); color: var(--bg); font-weight: 600; font-size: .95rem; transition: opacity .2s; }
-.btn:hover { opacity: .88; }
-.btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.btn:focus-within { outline: 3px solid var(--fg); outline-offset: 2px; }
-.error { color: var(--b4); margin-top: 10px; }
-footer { max-width: 1120px; margin: 0 auto; padding: 8px 20px 48px; color: var(--mute); font-size: .85rem; }
-footer .btn { background: transparent; color: var(--fg); border: 1px solid var(--rule); font-weight: 500; padding: 6px 12px; font-size: .85rem; margin-left: 6px; }
-@media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; gap: 32px; }
-  .side { position: static; }
-  .gwa { font-size: 3.75rem; }
-}
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* E-Ink / Paper style (ui-ux-pro-max): off-white, ink black, grain, sharp transitions */
+:root{color-scheme:light dark;--paper:#FDFBF7;--ink:#1A1A1A;--mute:#5E5C57;--rule:#CFCAC0;--red:#C0301F;
+--serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,"Noto Serif","Times New Roman",serif;
+--mono:ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace}
+@media(prefers-color-scheme:dark){:root{--paper:#161512;--ink:#ECE8DC;--mute:#A6A196;--rule:#3A3832;--red:#FF7A63}}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;min-height:100vh;color:var(--ink);background:var(--paper);font:17px/1.45 var(--serif);font-variant-numeric:lining-nums tabular-nums;
+padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(72px + env(safe-area-inset-bottom)) env(safe-area-inset-left)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;opacity:.06;
+background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.wrap{max-width:560px;margin:0 auto;padding:18px 20px 8px}
+.top{display:flex;justify-content:space-between;gap:12px;padding-bottom:8px;border-bottom:2px solid var(--ink);
+font:500 .72rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.mono{font:500 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+h2{margin:34px 0 4px;font-size:1.05rem;font-weight:700;letter-spacing:.01em}
+.note{margin:4px 0 10px;color:var(--mute);font-size:.9rem}
+.cap{margin:26px 0 0}
+.gwa-box{position:relative;display:inline-block;margin:10px 18px 10px 14px;padding:4px 18px}
+.gwa{font-size:6.6rem;line-height:1.05;letter-spacing:-.03em}
+.circle{position:absolute;left:-12px;top:-8px;width:calc(100% + 24px);height:calc(100% + 16px);overflow:visible}
+.circle path{fill:none;stroke:var(--red);stroke-width:3.5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.row{padding:12px 0;border-bottom:1px solid var(--rule)}
+.r1{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.name{font-size:1rem}
+.val{font-size:1.25rem;font-weight:700;white-space:nowrap}
+.meta{font:.72rem var(--mono);color:var(--mute)}
+.rail{position:relative;height:18px;margin:6px 0 2px;
+background:linear-gradient(var(--ink),var(--ink)) 0 50%/100% 1px no-repeat,linear-gradient(var(--ink),var(--ink)) 0 0/1px 100% no-repeat,
+linear-gradient(var(--ink),var(--ink)) 50% 0/1px 100% no-repeat,linear-gradient(var(--ink),var(--ink)) 100% 0/1px 100% no-repeat}
+.rail .dot{position:absolute;top:50%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--ink)}
+.rail .gl{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--red)}
+.scale{display:flex;justify-content:space-between;font:.68rem var(--mono);color:var(--mute);margin-top:10px}
+details{border-top:2px solid var(--ink);margin-top:14px}
+summary{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:52px;cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary .t{font-size:1.1rem;font-style:italic}
+summary .g{font-weight:700;font-size:1.3rem}
+summary .g::after{content:"+";font:500 1rem var(--mono);margin-left:12px;color:var(--mute)}
+details[open] summary .g::after{content:"\2212"}
+.sum{margin:0 0 4px;color:var(--mute);font:.75rem var(--mono)}
+.btn{display:inline-flex;align-items:center;min-height:48px;padding:0 20px;background:var(--ink);color:var(--paper);border:2px solid var(--ink);
+font:600 .8rem var(--mono);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:0}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn input{position:absolute;opacity:0;width:1px;height:1px}
+.btn:focus-within,.btn:focus-visible,.tabs button:focus-visible,summary:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.actions{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:16px 0}
+.err{color:var(--red)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;display:grid;grid-template-columns:repeat(3,1fr);background:var(--paper);
+border-top:2px solid var(--ink);padding-bottom:env(safe-area-inset-bottom)}
+.tabs button{min-height:56px;border:0;background:transparent;color:var(--mute);font:600 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.tabs button[aria-current=page]{color:var(--ink);box-shadow:inset 0 4px 0 var(--ink)}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div class="layout" id="app"></div>
-<footer>
-  Your grades are read in this browser tab only and are never uploaded.
-  <label class="btn">Load a different file<input type="file" id="again" accept=".json,application/json"></label>
-</footer>
-
+<div class="wrap">
+  <div class="top"><span>Grade Book</span><span id="stamp"></span></div>
+  <section id="v-now"></section>
+  <section id="v-terms" hidden></section>
+  <section id="v-data" hidden></section>
+</div>
+<nav class="tabs" aria-label="Sections">
+  <button data-tab="now">Overview</button><button data-tab="terms">Semesters</button><button data-tab="data">Data</button>
+</nav>
 <script src="grades.js"></script>
 <script>
-const $ = (s) => document.querySelector(s);
-function h(tag, cls, text) {
-  const e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (text != null) e.textContent = text;
-  return e;
-}
-const NS = "http://www.w3.org/2000/svg";
-function s(tag, attrs, text) {
-  const e = document.createElementNS(NS, tag);
-  for (const k in attrs) e.setAttribute(k, attrs[k]);
-  if (text != null) e.textContent = text;
-  return e;
-}
+const KEY = "ismis-grades-v1", NS = "http://www.w3.org/2000/svg", $ = (s) => document.querySelector(s);
+const h = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
 const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : null; };
-// On this scale a lower number is a better grade.
-const band = (n) => n == null ? "" : n <= 1.5 ? "b1" : n <= 2 ? "b2" : n <= 3 ? "b3" : "b4";
-const small = new Set(["and", "of", "to", "in", "for", "the", "on", "a", "at"]);
-const titleCase = (str) => str.toLowerCase().replace(/[a-z0-9]+/g, (w, i) =>
-  /^(i|ii|iii|iv|v|vi|it|ai|ict|hci)$/.test(w) ? w.toUpperCase()
-  : (i > 0 && small.has(w)) ? w : w[0].toUpperCase() + w.slice(1));
+const pct = (g) => Math.max(0, Math.min(1, (g - 1) / 2)) * 100;   // 1.0 (best) on the left, 3.0+ on the right
+const small = new Set(["and","of","to","in","for","the","on","a","at"]);
+const titleCase = (s) => s.toLowerCase().replace(/[a-z0-9]+/g, (w, i) => /^(i|ii|iii|iv|v|vi|it|ai|ict|hci)$/.test(w) ? w.toUpperCase() : (i > 0 && small.has(w)) ? w : w[0].toUpperCase() + w.slice(1));
 const prettyTerm = (t) => { t = t.toLowerCase().replace(/\s*-\s*/, ", "); return t[0].toUpperCase() + t.slice(1); };
-function shortTerm(t) {
-  const m = t.toLowerCase();
-  const sem = m.includes("first") ? "1st sem" : m.includes("second") ? "2nd sem" : m.includes("summer") ? "Summer" : "Term";
-  return sem + " " + ((t.match(/\d{4}/) || [""])[0]);
-}
-function shown(v) {
-  v = (v || "").trim();
-  if (!v || v === "NG") return "\u2014";
-  if (/evaluate/i.test(v)) return "Pending";
-  return v;
-}
+const shown = (v) => { v = (v || "").trim(); return !v || v === "NG" ? "\u2014" : /evaluate/i.test(v) ? "Pending" : v; };
+const f2 = (g) => g == null ? "\u2014" : g.toFixed(2);
 
-function trendChart(points) {
-  const W = 640, H = 250, L = 36, R = 48, T = 28, B = 40;
-  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img",
-    "aria-label": "GPA by semester: " + points.map((p) => `${shortTerm(p.term)} ${p.gpa.toFixed(2)}`).join(", ") });
-  const yMin = 1.0, yMax = Math.max(2.5, Math.ceil((Math.max(...points.map((p) => p.gpa)) + 0.1) * 4) / 4);
-  const y = (g) => T + ((g - yMin) / (yMax - yMin)) * (H - T - B);
-  const x = (i) => points.length === 1 ? (L + W - R) / 2 : L + (i * (W - L - R)) / (points.length - 1);
-  for (let g = yMin; g <= yMax + 0.001; g += 0.5) {
-    svg.append(s("line", { x1: L, x2: W - R, y1: y(g), y2: y(g), class: "grid" }));
-    svg.append(s("text", { x: L - 6, y: y(g) + 4, "text-anchor": "end" }, g.toFixed(1)));
-  }
-  svg.append(s("text", { x: L, y: 12 }, "Better"));
-  svg.append(s("polyline", { class: "line", points: points.map((p, i) => `${x(i)},${y(p.gpa)}`).join(" ") }));
-  points.forEach((p, i) => {
-    svg.append(s("circle", { cx: x(i), cy: y(p.gpa), r: 6, class: "pt", fill: `var(--${band(p.gpa)})` }));
-    svg.append(s("text", { x: x(i), y: y(p.gpa) - 12, "text-anchor": "middle", class: "val" }, p.gpa.toFixed(2)));
-    svg.append(s("text", { x: x(i), y: H - 14, "text-anchor": "middle" }, shortTerm(p.term)));
-  });
-  return svg;
+let store = null;
+function load() {
+  if (window.GRADES) return { data: window.GRADES, at: null };
+  try { const r = localStorage.getItem(KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; }
+}
+const termsOf = (d) => (Array.isArray(d) ? d : d.terms || []);
+
+function rail(g, mark) {
+  const r = h("div", "rail");
+  if (mark != null) { const l = h("b", "gl"); l.style.left = pct(mark) + "%"; r.append(l); }
+  if (g != null) { const d = h("i", "dot"); d.style.left = pct(g) + "%"; r.append(d); }
+  return r;
+}
+function scale() { const s = h("div", "scale"); ["1.0", "2.0", "3.0+"].forEach((t) => s.append(h("span", null, t))); return s; }
+function circle() {
+  const s = document.createElementNS(NS, "svg"), p = document.createElementNS(NS, "path");
+  s.setAttribute("viewBox", "0 0 240 120"); s.setAttribute("preserveAspectRatio", "none"); s.setAttribute("class", "circle"); s.setAttribute("aria-hidden", "true");
+  p.setAttribute("d", "M14 70C6 28 80 6 140 10c66 4 96 36 84 66-12 30-84 38-146 32C34 104 2 92 10 52");
+  s.append(p); return s;
 }
 
-function trendText(points) {
-  if (points.length < 2) return "";
-  const first = points[0], last = points[points.length - 1];
-  const best = points.reduce((a, b) => (b.gpa < a.gpa ? b : a));
-  const diff = last.gpa - first.gpa;
-  const dir = Math.abs(diff) < 0.005 ? "stayed the same" : diff < 0 ? "improved" : "went up";
-  return `GPA ${dir} from ${first.gpa.toFixed(2)} (${shortTerm(first.term)}) to ${last.gpa.toFixed(2)} (${shortTerm(last.term)}). Best term: ${best.gpa.toFixed(2)} in ${shortTerm(best.term)}.`;
-}
-
-function fact(dl, k, v) {
-  const row = h("div", "fact");
-  row.append(h("dt", null, k), h("dd", null, v));
-  dl.append(row);
-}
-
-function render(data) {
-  const terms = Array.isArray(data) ? data : (data.terms || []);
-  const overall = Array.isArray(data) ? null : data.overall;
-  const app = $("#app");
-  app.replaceChildren();
-
-  const points = terms
-    .map((t) => ({ term: t.term, gpa: num(t.summary && t.summary.FG) }))
-    .filter((p) => p.gpa != null);
-
-  // Left column: overall standing
-  const side = h("aside", "side");
-  side.append(h("h1", null, "Grades"), h("p", "sub", "On this scale, a lower number is a better grade."));
-  side.append(h("div", "label", "General weighted average"));
-  const gwa = num(overall && overall.gwa);
-  side.append(h("div", "gwa " + band(gwa), gwa != null ? gwa.toFixed(2) : "\u2014"));
-  const dl = h("dl");
-  if (overall && overall.total_units_earned) fact(dl, "Units earned", overall.total_units_earned);
-  if (points.length) {
-    const best = points.reduce((a, b) => (b.gpa < a.gpa ? b : a));
-    fact(dl, "Best term", `${best.gpa.toFixed(2)} (${shortTerm(best.term)})`);
-    const last = points[points.length - 1];
-    fact(dl, "Latest term", `${last.gpa.toFixed(2)} (${shortTerm(last.term)})`);
-  }
-  side.append(dl);
-  const tt = trendText(points);
-  if (tt) side.append(h("p", "trend", tt));
-  app.append(side);
-
-  // Right column: chart, then semesters (newest first)
-  const main = h("main");
-  if (points.length) {
-    const cw = h("section", "chart-wrap");
-    cw.append(h("h2", null, "GPA by semester"), trendChart(points));
-    main.append(cw);
-  }
+function viewNow(d) {
+  const v = $("#v-now"); v.replaceChildren();
+  const terms = termsOf(d), o = Array.isArray(d) ? null : d.overall, gwa = num(o && o.gwa);
+  v.append(h("p", "mono cap", "General weighted average"));
+  const box = h("div", "gwa-box"); box.append(h("div", "gwa", f2(gwa)), circle()); v.append(box);
+  if (o && o.total_units_earned) v.append(h("p", "note", o.total_units_earned + " units earned. A lower number is a better grade."));
+  v.append(h("h2", null, "By semester"), h("p", "note", "Each dot is one semester\u2019s GPA. Further left is better."), scale());
   terms.slice().reverse().forEach((t) => {
-    const sec = h("section", "term");
-    const top = h("div", "term-head");
-    top.append(h("h2", null, prettyTerm(t.term)));
-    const g = num(t.summary && t.summary.FG);
-    const gp = h("div", "term-gpa " + band(g));
-    gp.append(h("small", null, "GPA"), document.createTextNode(g != null ? g.toFixed(2) : "Pending"));
-    top.append(gp);
-    sec.append(top);
-    if (t.summary && t.summary.Description) sec.append(h("p", "units", t.summary.Description));
-
-    const wrap = h("div", "scroll");
-    const table = h("table");
-    const thead = h("thead"), hr = h("tr");
-    [["Code", ""], ["Course", ""], ["Units", "n"], ["Midterm", "n"], ["Final", "n"]]
-      .forEach(([label, cls]) => { const th = h("th", cls, label); th.scope = "col"; hr.append(th); });
-    thead.append(hr); table.append(thead);
-    const tb = h("tbody");
-    t.courses.forEach((c) => {
-      const tr = h("tr");
-      const fg = num(c.FG);
-      tr.append(
-        h("td", "code", c["Course Code"] || c.col1 || ""),
-        h("td", null, titleCase(c.Description || c.col2 || "")),
-        h("td", "n", c.Units || c.col3 || ""),
-        h("td", "n muted", shown(c.MG)),
-        h("td", "n fg " + (fg != null ? band(fg) : "muted"), shown(c.FG))
-      );
-      tb.append(tr);
-    });
-    table.append(tb); wrap.append(table); sec.append(wrap); main.append(sec);
+    const g = num(t.summary && t.summary.FG), row = h("div", "row"), r1 = h("div", "r1");
+    r1.append(h("span", "name", prettyTerm(t.term)), h("span", "val", f2(g)));
+    row.append(r1, rail(g)); v.append(row);
   });
-  app.append(main);
 }
 
-function loadFile(file) {
-  file.text().then((txt) => render(JSON.parse(txt)))
-    .catch(() => showPicker("That file isn\u2019t a valid grades.json. Choose the file that grades.py created."));
+function viewTerms(d) {
+  const v = $("#v-terms"); v.replaceChildren();
+  termsOf(d).slice().reverse().forEach((t, i) => {
+    const g = num(t.summary && t.summary.FG), det = h("details"), sm = h("summary");
+    if (i === 0) det.open = true;
+    sm.append(h("span", "t", prettyTerm(t.term)), h("span", "g", f2(g))); det.append(sm);
+    if (t.summary && t.summary.Description) det.append(h("p", "sum", t.summary.Description));
+    det.append(scale());
+    t.courses.forEach((c) => {
+      const fg = num(c.FG), row = h("div", "row"), r1 = h("div", "r1");
+      r1.append(h("span", "name", titleCase(c.Description || c.col2 || "")), h("span", "val", shown(c.FG)));
+      row.append(r1, rail(fg, g), h("div", "meta", `${c["Course Code"] || c.col1 || ""}  \u00b7  ${c.Units || c.col3 || ""} units  \u00b7  midterm ${shown(c.MG)}`));
+      det.append(row);
+    });
+    v.append(det);
+  });
+  if (!v.children.length) v.append(h("p", "note", "No semesters yet. Import your grades on the Data tab."));
 }
 
-function showPicker(error) {
-  const app = $("#app");
-  app.replaceChildren();
-  const box = h("div", "picker");
-  box.append(h("p", null, "No grades found yet. Run python grades.py in this folder, then refresh. Or choose grades.json here."));
-  box.append(h("p", "muted", "Browsers block pages from reading local files on their own. To skip this step, run python -m http.server in this folder and open localhost:8000."));
-  const label = h("label", "btn", "Choose grades.json");
-  const input = h("input"); input.type = "file"; input.accept = ".json,application/json";
-  input.addEventListener("change", () => input.files[0] && loadFile(input.files[0]));
-  label.append(input); box.append(label);
-  if (error) box.append(h("p", "error", error));
-  app.append(box);
+function viewData() {
+  const v = $("#v-data"); v.replaceChildren();
+  v.append(h("h2", null, "Your data"));
+  v.append(h("p", "note", "Grades stay on this device. On your computer run python grades.py, send grades.json to this phone (cloud drive, email to yourself, or a cable), then import it here."));
+  const act = h("div", "actions"), lab = h("label", "btn", "Import grades.json"), inp = h("input");
+  inp.type = "file"; inp.accept = ".json,application/json";
+  inp.addEventListener("change", () => inp.files[0] && importFile(inp.files[0]));
+  lab.append(inp); act.append(lab);
+  const clr = h("button", "btn ghost", "Forget grades on this device");
+  clr.addEventListener("click", () => { try { localStorage.removeItem(KEY); } catch (e) {} store = null; paint(); });
+  act.append(clr); v.append(act, h("p", "note", store && store.at ? "Last import: " + new Date(store.at).toLocaleString() : store ? "Loaded from grades.js." : "Nothing imported yet."));
+  v.append(h("p", "err", "")); v.lastChild.id = "msg";
+  v.append(h("h2", null, "Install on your phone"), h("p", "note", "Open this page in Chrome or Safari, then use the browser menu: Add to Home screen (or Install app). It then opens full screen and works offline."));
 }
 
-$("#again").addEventListener("change", (e) => e.target.files[0] && loadFile(e.target.files[0]));
-addEventListener("dragover", (e) => e.preventDefault());
-addEventListener("drop", (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
-
-if (window.GRADES) {
-  render(window.GRADES);
-} else {
-  fetch("grades.json", { cache: "no-store" })
-    .then((r) => { if (!r.ok) throw new Error("missing"); return r.json(); })
-    .then(render)
-    .catch(() => showPicker());
+function importFile(file) {
+  file.text().then((txt) => {
+    const d = JSON.parse(txt);
+    if (!Array.isArray(d) && !Array.isArray(d.terms)) throw new Error("shape");
+    store = { data: d, at: Date.now() };
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
+    paint(); show("now");
+  }).catch(() => { $("#msg").textContent = "That doesn\u2019t look like the grades.json made by grades.py."; });
 }
+
+function show(name) {
+  ["now", "terms", "data"].forEach((n) => { $("#v-" + n).hidden = n !== name; });
+  document.querySelectorAll(".tabs button").forEach((b) => b.toggleAttribute("aria-current", b.dataset.tab === name) || b.removeAttribute("aria-current"));
+  document.querySelectorAll(".tabs button").forEach((b) => b.dataset.tab === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  scrollTo(0, 0);
+}
+function paint() {
+  store = store || load();
+  $("#stamp").textContent = store && store.at ? new Date(store.at).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+  if (store) { viewNow(store.data); viewTerms(store.data); } else { $("#v-now").replaceChildren(h("p", "note", "No grades yet. Open the Data tab to import them.")); $("#v-terms").replaceChildren(); }
+  viewData();
+}
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
+paint(); show(store ? "now" : "data");
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>
