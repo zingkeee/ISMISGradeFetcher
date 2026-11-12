@@ -1,7 +1,7 @@
 .env
 state.json
 grades.json
+grades.js
 debug/
 __pycache__/
 .venv/
-.vscode/

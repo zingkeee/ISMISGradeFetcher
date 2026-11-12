@@ -6,6 +6,7 @@ and saves it to grades.json. Run it only on your own computer, for your own acco
 Usage:
     python grades.py            # headless run
     python grades.py --show     # watch the browser (useful for the first run)
+    python grades.py --open     # fetch, then open index.html
     python grades.py --dump     # save debug/page.html + debug/page.png of the grades page
 """
 import json
@@ -32,6 +33,7 @@ GRADES_TABLE_SELECTOR = os.getenv("GRADES_TABLE_SELECTOR", "table")
 
 STATE_FILE = Path("state.json")   # saved login session (keep private, gitignored)
 OUTPUT_FILE = Path("grades.json")  # your grades (keep private, gitignored)
+JS_FILE = Path("grades.js")        # same data for index.html (keep private, gitignored)
 DEBUG_DIR = Path("debug")
 
 
@@ -170,6 +172,7 @@ def main():
         browser.close()
 
     OUTPUT_FILE.write_text(json.dumps(grades, indent=2, ensure_ascii=False), encoding="utf-8")
+    JS_FILE.write_text("window.GRADES = " + json.dumps(grades) + ";\n", encoding="utf-8")
     print(f"Saved {len(grades['terms'])} semester(s) to {OUTPUT_FILE}")
     if grades["overall"]:
         print("Overall:", grades["overall"])
@@ -179,6 +182,10 @@ def main():
             print("  ", c)
         if t["summary"]:
             print("  >>", t["summary"])
+
+    if "--open" in sys.argv:
+        import webbrowser
+        webbrowser.open(Path("index.html").resolve().as_uri())
 
 
 if __name__ == "__main__":

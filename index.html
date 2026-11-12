@@ -3,90 +3,94 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My grades</title>
+<title>Grades</title>
 <style>
+/* Design tokens: Minimalism & Swiss Style (ui-ux-pro-max), education teal + grade colors */
 :root {
   color-scheme: light dark;
-  --bg: #eef1ee; --panel: #ffffff; --ink: #17201a; --mute: #55625a; --rule: #cfd7d0;
-  --accent: #14402a;
-  --b1: #1b7a46; --b2: #4a7f2c; --b3: #8a6a00; --b4: #b4432f;
+  --bg: #F0FDFA; --card: #FFFFFF; --fg: #134E4A; --mute: #475569; --rule: #99D5CC; --muted-bg: #E8F1F4;
+  --primary: #0F766E; --chart: #0D9488;
+  --b1: #0F766E; --b2: #166534; --b3: #B45309; --b4: #B91C1C;
+  --sans: "Fira Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "Fira Code", Consolas, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #101612; --panel: #171f19; --ink: #e8eee9; --mute: #9aa89e; --rule: #2b372e;
-    --accent: #7fc79b;
-    --b1: #3fae70; --b2: #86b95f; --b3: #d9b44a; --b4: #e0705a;
+    --bg: #0B1F1E; --card: #112826; --fg: #E6FFFA; --mute: #9DBDB8; --rule: #25524E; --muted-bg: #163532;
+    --primary: #5EEAD4; --chart: #2DD4BF;
+    --b1: #5EEAD4; --b2: #86EFAC; --b3: #FCD34D; --b4: #FCA5A5;
   }
 }
 * { box-sizing: border-box; }
 html { background: var(--bg); }
-body {
-  margin: 0; color: var(--ink); background: var(--bg);
-  font: 16px/1.5 "Segoe UI", system-ui, -apple-system, sans-serif;
+body { margin: 0; color: var(--fg); background: var(--bg); font: 16px/1.5 var(--sans); }
+.layout {
+  max-width: 1120px; margin: 0 auto; padding: 40px 20px 24px;
+  display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 56px; align-items: start;
 }
-main { max-width: 980px; margin: 0 auto; padding: 40px 20px 24px; }
-.serif { font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
-h1 { margin: 0 0 4px; font-size: 1.1rem; font-weight: 600; }
-.sub { margin: 0; color: var(--mute); font-size: .9rem; }
+.side { position: sticky; top: 24px; }
+h1 { margin: 0; font-size: 1.25rem; font-weight: 600; }
+.sub { margin: 4px 0 28px; color: var(--mute); font-size: .9rem; }
+.label { color: var(--mute); font-size: .9rem; }
+.gwa { font: 500 4.5rem/1 var(--mono); letter-spacing: -.04em; margin: 6px 0 24px; }
+dl { margin: 0; border-top: 2px solid var(--fg); }
+.fact { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+dt { color: var(--mute); font-size: .9rem; }
+dd { margin: 0; font: 500 .95rem var(--mono); text-align: right; }
+.trend { margin: 18px 0 0; color: var(--mute); font-size: .9rem; max-width: 46ch; }
 
-.hero {
-  display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 32px;
-  align-items: center; padding: 28px 0 36px; border-bottom: 2px solid var(--ink);
-}
-.gwa-label { color: var(--mute); font-size: .95rem; }
-.gwa { font-size: 5.5rem; line-height: 1; margin: 4px 0 6px; letter-spacing: -.02em; }
-.gwa-note { color: var(--mute); font-size: .9rem; margin: 0; }
-.chart { width: 100%; height: auto; display: block; }
+h2 { margin: 0; font-size: 1.2rem; font-weight: 600; }
+.chart-wrap { border-top: 2px solid var(--fg); padding-top: 14px; }
+.chart { width: 100%; height: auto; display: block; margin-top: 8px; }
 .chart .grid { stroke: var(--rule); stroke-width: 1; }
-.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; }
-.chart text { fill: var(--mute); font-size: 11px; }
-.chart .val { fill: var(--ink); font-size: 13px; font-weight: 600; }
-.chart .pt { stroke: var(--panel); stroke-width: 2; }
-.better { fill: var(--mute); font-size: 11px; }
+.chart .line { fill: none; stroke: var(--chart); stroke-width: 2.5; }
+.chart text { fill: var(--mute); font: 11px var(--sans); }
+.chart .val { fill: var(--fg); font: 500 12px var(--mono); }
+.chart .pt { stroke: var(--bg); stroke-width: 2; }
 
-.term { padding-top: 32px; }
-.term-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-.term h2 { margin: 0; font-size: 1.4rem; font-weight: 600; }
-.term-gpa { font-size: 1.9rem; }
-.term-gpa small { font-family: "Segoe UI", system-ui, sans-serif; font-size: .8rem; color: var(--mute); margin-right: 8px; }
+.term { margin-top: 44px; }
+.term-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  border-top: 2px solid var(--fg); padding-top: 14px; }
+.term-gpa { font: 500 1.6rem var(--mono); }
+.term-gpa small { font: 400 .8rem var(--sans); color: var(--mute); margin-right: 8px; }
 .units { margin: 2px 0 10px; color: var(--mute); font-size: .9rem; }
 .scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 520px; }
-th, td { padding: 9px 10px; text-align: left; border-top: 1px solid var(--rule); vertical-align: baseline; }
-th { font-size: .85rem; font-weight: 600; color: var(--mute); border-top: 0; border-bottom: 1px solid var(--ink); }
-td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
-td.code { color: var(--mute); white-space: nowrap; }
-td.fg { font-weight: 700; font-size: 1.05rem; }
-.muted { color: var(--mute); font-weight: 400; }
+th, td { padding: 10px 12px 10px 0; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: baseline; }
+th { font-size: .85rem; font-weight: 600; color: var(--mute); }
+td.n, th.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+th.n { font-family: var(--sans); }
+td.code { color: var(--mute); font-family: var(--mono); font-size: .85rem; white-space: nowrap; }
+td.fg { font-weight: 600; }
+.muted { color: var(--mute); }
 .b1 { color: var(--b1); } .b2 { color: var(--b2); } .b3 { color: var(--b3); } .b4 { color: var(--b4); }
 
-.picker {
-  margin-top: 32px; padding: 28px; border: 2px dashed var(--rule); border-radius: 8px; background: var(--panel);
-}
+.picker { padding: 28px; border: 2px dashed var(--rule); border-radius: 4px; background: var(--card); grid-column: 1 / -1; }
 .picker p { margin: 0 0 12px; max-width: 60ch; }
-.picker code { background: var(--bg); padding: 1px 5px; border-radius: 3px; }
-.btn {
-  display: inline-block; padding: 8px 16px; border-radius: 6px; cursor: pointer;
-  background: var(--accent); color: var(--bg); font-weight: 600; font-size: .95rem;
-}
+.btn { display: inline-block; padding: 10px 16px; border-radius: 4px; cursor: pointer; min-height: 44px;
+  background: var(--primary); color: var(--bg); font-weight: 600; font-size: .95rem; transition: opacity .2s; }
+.btn:hover { opacity: .88; }
 .btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.btn:focus-within { outline: 3px solid var(--ink); outline-offset: 2px; }
+.btn:focus-within { outline: 3px solid var(--fg); outline-offset: 2px; }
 .error { color: var(--b4); margin-top: 10px; }
-footer { max-width: 980px; margin: 0 auto; padding: 8px 20px 48px; color: var(--mute); font-size: .85rem; }
-footer .btn { background: transparent; color: var(--ink); border: 1px solid var(--rule); font-weight: 500; padding: 4px 10px; font-size: .85rem; margin-left: 6px; }
-@media (max-width: 760px) {
-  .hero { grid-template-columns: 1fr; gap: 20px; }
-  .gwa { font-size: 4.5rem; }
+footer { max-width: 1120px; margin: 0 auto; padding: 8px 20px 48px; color: var(--mute); font-size: .85rem; }
+footer .btn { background: transparent; color: var(--fg); border: 1px solid var(--rule); font-weight: 500; padding: 6px 12px; font-size: .85rem; margin-left: 6px; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; gap: 32px; }
+  .side { position: static; }
+  .gwa { font-size: 3.75rem; }
 }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<main id="app"></main>
+<div class="layout" id="app"></div>
 <footer>
   Your grades are read in this browser tab only and are never uploaded.
   <label class="btn">Load a different file<input type="file" id="again" accept=".json,application/json"></label>
 </footer>
 
+<script src="grades.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
 function h(tag, cls, text) {
@@ -102,7 +106,6 @@ function s(tag, attrs, text) {
   if (text != null) e.textContent = text;
   return e;
 }
-
 const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : null; };
 // On this scale a lower number is a better grade.
 const band = (n) => n == null ? "" : n <= 1.5 ? "b1" : n <= 2 ? "b2" : n <= 3 ? "b3" : "b4";
@@ -116,7 +119,7 @@ function shortTerm(t) {
   const sem = m.includes("first") ? "1st sem" : m.includes("second") ? "2nd sem" : m.includes("summer") ? "Summer" : "Term";
   return sem + " " + ((t.match(/\d{4}/) || [""])[0]);
 }
-function shown(v, isFinal) {
+function shown(v) {
   v = (v || "").trim();
   if (!v || v === "NG") return "\u2014";
   if (/evaluate/i.test(v)) return "Pending";
@@ -124,18 +127,17 @@ function shown(v, isFinal) {
 }
 
 function trendChart(points) {
-  const W = 520, H = 230, L = 36, R = 44, T = 28, B = 40;
+  const W = 640, H = 250, L = 36, R = 48, T = 28, B = 40;
   const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img",
-    "aria-label": "Semester GPA over time" });
-  const gpas = points.map((p) => p.gpa);
-  const yMin = 1.0, yMax = Math.max(2.5, Math.ceil((Math.max(...gpas) + 0.1) * 4) / 4);
+    "aria-label": "GPA by semester: " + points.map((p) => `${shortTerm(p.term)} ${p.gpa.toFixed(2)}`).join(", ") });
+  const yMin = 1.0, yMax = Math.max(2.5, Math.ceil((Math.max(...points.map((p) => p.gpa)) + 0.1) * 4) / 4);
   const y = (g) => T + ((g - yMin) / (yMax - yMin)) * (H - T - B);
   const x = (i) => points.length === 1 ? (L + W - R) / 2 : L + (i * (W - L - R)) / (points.length - 1);
   for (let g = yMin; g <= yMax + 0.001; g += 0.5) {
     svg.append(s("line", { x1: L, x2: W - R, y1: y(g), y2: y(g), class: "grid" }));
     svg.append(s("text", { x: L - 6, y: y(g) + 4, "text-anchor": "end" }, g.toFixed(1)));
   }
-  svg.append(s("text", { x: L, y: 12, class: "better" }, "Better"));
+  svg.append(s("text", { x: L, y: 12 }, "Better"));
   svg.append(s("polyline", { class: "line", points: points.map((p, i) => `${x(i)},${y(p.gpa)}`).join(" ") }));
   points.forEach((p, i) => {
     svg.append(s("circle", { cx: x(i), cy: y(p.gpa), r: 6, class: "pt", fill: `var(--${band(p.gpa)})` }));
@@ -145,37 +147,63 @@ function trendChart(points) {
   return svg;
 }
 
+function trendText(points) {
+  if (points.length < 2) return "";
+  const first = points[0], last = points[points.length - 1];
+  const best = points.reduce((a, b) => (b.gpa < a.gpa ? b : a));
+  const diff = last.gpa - first.gpa;
+  const dir = Math.abs(diff) < 0.005 ? "stayed the same" : diff < 0 ? "improved" : "went up";
+  return `GPA ${dir} from ${first.gpa.toFixed(2)} (${shortTerm(first.term)}) to ${last.gpa.toFixed(2)} (${shortTerm(last.term)}). Best term: ${best.gpa.toFixed(2)} in ${shortTerm(best.term)}.`;
+}
+
+function fact(dl, k, v) {
+  const row = h("div", "fact");
+  row.append(h("dt", null, k), h("dd", null, v));
+  dl.append(row);
+}
+
 function render(data) {
   const terms = Array.isArray(data) ? data : (data.terms || []);
   const overall = Array.isArray(data) ? null : data.overall;
   const app = $("#app");
   app.replaceChildren();
 
-  const head = h("div");
-  head.append(h("h1", null, "Grades"), h("p", "sub", "On this scale, a lower number is a better grade."));
-  app.append(head);
-
-  const hero = h("section", "hero");
-  const left = h("div");
-  left.append(h("div", "gwa-label", "General weighted average"));
-  const gwa = num(overall && overall.gwa);
-  left.append(h("div", "gwa serif " + band(gwa), gwa != null ? gwa.toFixed(2) : "\u2014"));
-  if (overall && overall.total_units_earned) left.append(h("p", "gwa-note", overall.total_units_earned + " units earned"));
-  hero.append(left);
-
   const points = terms
     .map((t) => ({ term: t.term, gpa: num(t.summary && t.summary.FG) }))
     .filter((p) => p.gpa != null);
-  if (points.length) hero.append(trendChart(points));
-  app.append(hero);
 
-  // Newest semester first.
+  // Left column: overall standing
+  const side = h("aside", "side");
+  side.append(h("h1", null, "Grades"), h("p", "sub", "On this scale, a lower number is a better grade."));
+  side.append(h("div", "label", "General weighted average"));
+  const gwa = num(overall && overall.gwa);
+  side.append(h("div", "gwa " + band(gwa), gwa != null ? gwa.toFixed(2) : "\u2014"));
+  const dl = h("dl");
+  if (overall && overall.total_units_earned) fact(dl, "Units earned", overall.total_units_earned);
+  if (points.length) {
+    const best = points.reduce((a, b) => (b.gpa < a.gpa ? b : a));
+    fact(dl, "Best term", `${best.gpa.toFixed(2)} (${shortTerm(best.term)})`);
+    const last = points[points.length - 1];
+    fact(dl, "Latest term", `${last.gpa.toFixed(2)} (${shortTerm(last.term)})`);
+  }
+  side.append(dl);
+  const tt = trendText(points);
+  if (tt) side.append(h("p", "trend", tt));
+  app.append(side);
+
+  // Right column: chart, then semesters (newest first)
+  const main = h("main");
+  if (points.length) {
+    const cw = h("section", "chart-wrap");
+    cw.append(h("h2", null, "GPA by semester"), trendChart(points));
+    main.append(cw);
+  }
   terms.slice().reverse().forEach((t) => {
     const sec = h("section", "term");
     const top = h("div", "term-head");
-    top.append(h("h2", "serif", prettyTerm(t.term)));
+    top.append(h("h2", null, prettyTerm(t.term)));
     const g = num(t.summary && t.summary.FG);
-    const gp = h("div", "term-gpa serif " + band(g));
+    const gp = h("div", "term-gpa " + band(g));
     gp.append(h("small", null, "GPA"), document.createTextNode(g != null ? g.toFixed(2) : "Pending"));
     top.append(gp);
     sec.append(top);
@@ -200,19 +228,21 @@ function render(data) {
       );
       tb.append(tr);
     });
-    table.append(tb); wrap.append(table); sec.append(wrap); app.append(sec);
+    table.append(tb); wrap.append(table); sec.append(wrap); main.append(sec);
   });
+  app.append(main);
 }
 
 function loadFile(file) {
-  file.text().then((txt) => render(JSON.parse(txt))).catch(() => showPicker("That file isn\u2019t a valid grades.json. Choose the file that grades.py created."));
+  file.text().then((txt) => render(JSON.parse(txt)))
+    .catch(() => showPicker("That file isn\u2019t a valid grades.json. Choose the file that grades.py created."));
 }
 
 function showPicker(error) {
   const app = $("#app");
   app.replaceChildren();
   const box = h("div", "picker");
-  box.append(h("p", null, "Choose the grades.json file that grades.py created, or drop it onto this page."));
+  box.append(h("p", null, "No grades found yet. Run python grades.py in this folder, then refresh. Or choose grades.json here."));
   box.append(h("p", "muted", "Browsers block pages from reading local files on their own. To skip this step, run python -m http.server in this folder and open localhost:8000."));
   const label = h("label", "btn", "Choose grades.json");
   const input = h("input"); input.type = "file"; input.accept = ".json,application/json";
@@ -224,15 +254,16 @@ function showPicker(error) {
 
 $("#again").addEventListener("change", (e) => e.target.files[0] && loadFile(e.target.files[0]));
 addEventListener("dragover", (e) => e.preventDefault());
-addEventListener("drop", (e) => {
-  e.preventDefault();
-  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
-});
+addEventListener("drop", (e) => { e.preventDefault(); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
 
-fetch("grades.json", { cache: "no-store" })
-  .then((r) => { if (!r.ok) throw new Error("missing"); return r.json(); })
-  .then(render)
-  .catch(() => showPicker());
+if (window.GRADES) {
+  render(window.GRADES);
+} else {
+  fetch("grades.json", { cache: "no-store" })
+    .then((r) => { if (!r.ok) throw new Error("missing"); return r.json(); })
+    .then(render)
+    .catch(() => showPicker());
+}
 </script>
 </body>
 </html>
