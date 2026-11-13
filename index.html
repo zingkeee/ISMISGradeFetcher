@@ -157,14 +157,33 @@ function viewData() {
   v.append(h("h2", null, "Install on your phone"), h("p", "note", "Open this page in Chrome or Safari, then use the browser menu: Add to Home screen (or Install app). It then opens full screen and works offline."));
 }
 
+function validateData(d) {
+  const terms = Array.isArray(d) ? d : d && Array.isArray(d.terms) ? d.terms : null;
+  if (!terms) throw new Error("Expected a terms array");
+  if (!Array.isArray(d) && d.overall != null && (typeof d.overall !== "object" || Array.isArray(d.overall))) {
+    throw new Error("Invalid overall summary");
+  }
+  terms.forEach((t, i) => {
+    if (!t || typeof t !== "object" || typeof t.term !== "string" || !Array.isArray(t.courses)) {
+      throw new Error(`Invalid semester at row ${i + 1}`);
+    }
+    if (t.summary != null && (typeof t.summary !== "object" || Array.isArray(t.summary))) {
+      throw new Error(`Invalid semester summary at row ${i + 1}`);
+    }
+    if (t.courses.some((c) => !c || typeof c !== "object" || Array.isArray(c))) {
+      throw new Error(`Invalid course row in semester ${i + 1}`);
+    }
+  });
+  return d;
+}
+
 function importFile(file) {
   file.text().then((txt) => {
-    const d = JSON.parse(txt);
-    if (!Array.isArray(d) && !Array.isArray(d.terms)) throw new Error("shape");
+    const d = validateData(JSON.parse(txt));
     store = { data: d, at: Date.now() };
     try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
     paint(); show("now");
-  }).catch(() => { $("#msg").textContent = "That doesn\u2019t look like the grades.json made by grades.py."; });
+  }).catch(() => { $("#msg").textContent = "That file isn't valid grade data. Try a grades.json made by grades.py."; });
 }
 
 function show(name) {
